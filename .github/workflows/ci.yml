@@ -1,0 +1,89 @@
+name: CI
+
+# Runs the full chronos-mem test suite + performance gate against a real
+# pgvector Postgres on every PR into main (and on pushes to main). This is the
+# automated guard the launch plan calls for: no contribution merges without the
+# functional tests passing, zero deadlocks under concurrency, and the perf
+# benchmark staying within budget.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # A real pgvector Postgres, same image the project targets.
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: chronos
+          POSTGRES_PASSWORD: chronos
+          POSTGRES_DB: chronos_mem
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U chronos -d chronos_mem"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+
+    env:
+      CHRONOS_DSN: postgresql://chronos:chronos@localhost:5432/chronos_mem
+      PGPASSWORD: chronos
+      # CI runners are noisy shared VMs, so the per-op latency gate is looser
+      # than the local sub-5ms target — this catches gross regressions without
+      # flaking on runner jitter. True sub-5ms is validated locally and in
+      # tests/benchmark_perf.py.
+      BENCH_GATE_MS: "20"
+      BENCH_N: "300"
+      BENCH_POOL: "20"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install psql client
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends postgresql-client
+
+      - name: Apply migrations (retry through initdb restart race)
+        run: |
+          set -e
+          apply() {
+            for i in $(seq 1 20); do
+              if psql "$CHRONOS_DSN" -v ON_ERROR_STOP=1 -f "$1" >/tmp/psql.out 2>&1; then
+                echo "applied $1"; return 0
+              fi
+              echo "  ...waiting for postgres (attempt $i)"; sleep 2
+            done
+            echo "FAILED to apply $1"; cat /tmp/psql.out; return 1
+          }
+          apply db/migrations/001_init_chronos_schema.sql
+          apply db/migrations/002_tool_brittleness_view.sql
+
+      - name: Install SDK
+        run: pip install -e sdk/python
+
+      - name: Functional tests
+        run: |
+          python sdk/python/scripts/smoke_test.py
+          python sdk/python/scripts/trace_test.py
+          python sdk/python/scripts/intervention_test.py
+          python sdk/python/scripts/analytics_test.py
+
+      - name: Dashboard render unit tests
+        run: PYTHONPATH=dashboard python dashboard/test_render.py
+
+      - name: Concurrency stress test (0 deadlocks)
+        run: python tests/stress_concurrency.py
+
+      - name: Performance gate
+        run: python tests/benchmark_perf.py
