@@ -16,7 +16,7 @@
 - Goal: Build the developer-facing client wrapper.
 - Tasks:
   1. Write 'sdk/python/chronos_mem/client.py' to manage safe async connection pools using psycopg3.
-  2. Write 'sdk/python/chronos_mem/tracking.py' exporting .create_plan(), .log_action(), and .log_outcome() returning Pydantic models.
+  2. Write 'sdk/python/chronos_mem/tracking.py' exporting .create_plan(), .log_action(), .log_outcome(), and .log_intervention() returning clean Pydantic models.
 - Branch: feature/02-python-sdk
 
 ### MILESTONE 3: CAUSAL TRACING ENGINE (WEEK 3)
