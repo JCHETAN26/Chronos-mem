@@ -19,11 +19,11 @@
   2. Write 'sdk/python/chronos_mem/tracking.py' exporting .create_plan(), .log_action(), .log_outcome(), and .log_intervention() returning clean Pydantic models.
 - Branch: feature/02-python-sdk
 
-### MILESTONE 3: CAUSAL TRACING ENGINE (WEEK 3)
-- Goal: Build the debugging query layer to explain timeline failures.
+### MILESTONE 3: CAUSAL TRACING & INTERVENTION ENGINE (WEEK 3)
+- Goal: Build the debugging query layer to explain timeline failures and pull historical fixes.
 - Tasks:
   1. Write a PostgreSQL Recursive Common Table Expression (CTE) query to trace multi-agent graph failures backwards.
-  2. Expose this inside the SDK via 'db.query_causality(plan_id)' ensuring a sub-5ms return time.
+  2. Expose this inside the SDK via 'db.query_causality(plan_id)' and 'db.get_best_intervention(error_type)' ensuring a sub-5ms return time so agents can automatically self-correct.
 - Branch: feature/03-causal-queries
 
 ### MILESTONE 4: DEBUG GRAPH UI & BENCHMARKS (WEEK 4)

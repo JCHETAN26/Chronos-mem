@@ -16,13 +16,15 @@ from typing import Any
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
 
+from .causality import CausalityMixin
+from .interventions import InterventionMixin
 from .tracking import TrackingMixin
 
 # Read from the environment when no DSN is passed explicitly.
 _DSN_ENV_VAR = "CHRONOS_DSN"
 
 
-class ChronosClient(TrackingMixin):
+class ChronosClient(TrackingMixin, CausalityMixin, InterventionMixin):
     """A pooled, async entrypoint to a chronos-mem database."""
 
     def __init__(
@@ -83,6 +85,17 @@ class ChronosClient(TrackingMixin):
         if row is None:
             raise RuntimeError("Expected a returned row but the statement produced none.")
         return row
+
+    async def _fetch(self, query: str, params: tuple[Any, ...]) -> list[dict[str, Any]]:
+        """Execute a read query and return all rows as dicts.
+
+        Used by the causal-trace recursive CTEs, which return one row per
+        action across the walked plan subtree.
+        """
+        async with self._pool.connection() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(query, params)
+                return await cur.fetchall()
 
     async def ping(self) -> bool:
         """Cheap liveness check — returns True if the pool can serve a query."""

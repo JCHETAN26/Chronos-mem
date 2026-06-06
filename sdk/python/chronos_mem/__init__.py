@@ -13,6 +13,10 @@ Public surface:
 from .client import ChronosClient
 from .models import (
     Action,
+    ActionTrace,
+    BestIntervention,
+    CausalNode,
+    CausalTrace,
     Intervention,
     InterventionStrategy,
     Memory,
@@ -29,9 +33,13 @@ __all__ = [
     "Action",
     "Outcome",
     "Intervention",
+    "BestIntervention",
     "PlanStatus",
     "OutcomeStatus",
     "InterventionStrategy",
+    "ActionTrace",
+    "CausalNode",
+    "CausalTrace",
 ]
 
 __version__ = "0.1.0"
