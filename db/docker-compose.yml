@@ -1,0 +1,52 @@
+# db/docker-compose.yml
+# chronos-mem — local Postgres engine
+#
+# Provisions PostgreSQL 16 with the pgvector extension preinstalled
+# (pgvector/pgvector:pg16 ships the extension binaries; the migration in
+# 001_init_chronos_schema.sql does `CREATE EXTENSION vector`).
+#
+# Usage:
+#   docker compose -f db/docker-compose.yml up -d
+#   # migrations under ./migrations are auto-applied on first init via
+#   # the /docker-entrypoint-initdb.d mount (alphabetical order).
+#
+# Connection string (default):
+#   postgresql://chronos:chronos@localhost:5432/chronos_mem
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: chronos-mem-pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-chronos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-chronos}
+      POSTGRES_DB: ${POSTGRES_DB:-chronos_mem}
+      # Deterministic, fast comparisons for our id/text keys.
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # Persistent data. Gitignored (db/data/).
+      - ./data:/var/lib/postgresql/data
+      # Auto-run migrations on first cluster init. Runs alphabetically,
+      # so 001_*, 002_*, ... apply in order.
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-chronos} -d ${POSTGRES_DB:-chronos_mem}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    # Performance tuning for a latency-sensitive local engine. These are
+    # safe starting points for the sub-5ms targets; tune per host.
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "work_mem=32MB"
+      - "-c"
+      - "max_connections=100"
+      - "-c"
+      - "random_page_cost=1.1"  # assume SSD-backed storage
