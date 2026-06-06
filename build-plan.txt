@@ -29,6 +29,6 @@
 ### MILESTONE 4: DEBUG GRAPH UI & BENCHMARKS (WEEK 4)
 - Goal: Build the visual timeline flowchart tracer and assert latency metrics.
 - Tasks:
-  1. Create a 1-page Streamlit/FastAPI debugging dashboard ('dashboard/app.py') that visually highlights failed plan nodes in red.
+  1. Create a 1-page Streamlit/FastAPI debugging dashboard ('dashboard/app.py') that visually highlights failed plan nodes in red and suggests the past successful intervention.
   2. Write 'tests/benchmark_perf.py' simulating 1,000 parallel agent calls to verify under 5ms write/read speeds.
 - Branch: feature/04-dashboard-benchmarks

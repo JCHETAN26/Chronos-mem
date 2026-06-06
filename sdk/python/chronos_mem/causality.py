@@ -19,6 +19,7 @@ Implemented as a mixin; ChronosClient supplies ``_fetch``.
 
 from __future__ import annotations
 
+from contextlib import AbstractAsyncContextManager
 from typing import Any, Protocol
 from uuid import UUID
 
@@ -90,7 +91,7 @@ ORDER BY height DESC;
 
 
 class _Fetcher(Protocol):
-    async def _fetch(self, query: str, params: Any) -> list[dict[str, Any]]: ...
+    def _cursor(self) -> AbstractAsyncContextManager[Any]: ...
 
 
 def _plan_from_row(row: dict[str, Any]) -> Plan:
@@ -117,13 +118,19 @@ class CausalityMixin:
     async def query_causality(self: _Fetcher, plan_id: UUID | str) -> CausalTrace:
         """Return the full causal context of ``plan_id``.
 
-        Runs the subtree (downward) and ancestor (upward) CTEs and assembles a
-        typed :class:`CausalTrace`. Raises ``LookupError`` if the plan is absent.
+        Runs the subtree (downward) and ancestor (upward) CTEs on a single
+        pooled connection — one checkout, one consistent snapshot — and
+        assembles a typed :class:`CausalTrace`. Raises ``LookupError`` if the
+        plan is absent.
         """
         params = {"plan_id": str(plan_id)}
-        subtree_rows = await self._fetch(_SUBTREE_SQL, params)
-        if not subtree_rows:
-            raise LookupError(f"No plan found with id {plan_id!r}")
+        async with self._cursor() as cur:
+            await cur.execute(_SUBTREE_SQL, params)
+            subtree_rows = await cur.fetchall()
+            if not subtree_rows:
+                raise LookupError(f"No plan found with id {plan_id!r}")
+            await cur.execute(_ANCESTORS_SQL, params)
+            ancestor_rows = await cur.fetchall()
 
         # Group the flat (plan x action) rows into one CausalNode per plan,
         # preserving the SQL ordering (depth, then chronological).
@@ -161,7 +168,6 @@ class CausalityMixin:
                 )
             node.actions.append(ActionTrace(action=action, outcome=outcome))
 
-        ancestor_rows = await self._fetch(_ANCESTORS_SQL, params)
         ancestors = [_plan_from_row(r) for r in ancestor_rows]
 
         return CausalTrace(
