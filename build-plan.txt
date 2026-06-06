@@ -1,0 +1,34 @@
+# CHRONOS-MEM DEVELOPMENT & GIT WORKFLOW PLAN
+
+### STRICT GIT PROTOCOL
+- NEVER push directly to the 'main' branch. 
+- All development must occur on descriptive feature branches (e.g., feature/01-init-db).
+- Every branch must be merged into 'main' via a GitHub Pull Request (PR) after a self-review of Claude's generated code.
+
+### MILESTONE 1: POSTGRES ENGINE & ENVIRONMENT (WEEK 1)
+- Goal: Provision local Postgres with pgvector and compile core schemas for chronos-mem.
+- Tasks:
+  1. Write 'db/docker-compose.yml' targeting PostgreSQL 16 + pgvector.
+  2. Write 'db/migrations/001_init_chronos_schema.sql' defining the 4 pillars (memories, plans, actions, outcomes) with strict foreign keys and performance indexes.
+- Branch: feature/01-postgres-core
+
+### MILESTONE 2: ASYNC PYTHON SDK CORE (WEEK 2)
+- Goal: Build the developer-facing client wrapper.
+- Tasks:
+  1. Write 'sdk/python/chronos_mem/client.py' to manage safe async connection pools using psycopg3.
+  2. Write 'sdk/python/chronos_mem/tracking.py' exporting .create_plan(), .log_action(), and .log_outcome() returning Pydantic models.
+- Branch: feature/02-python-sdk
+
+### MILESTONE 3: CAUSAL TRACING ENGINE (WEEK 3)
+- Goal: Build the debugging query layer to explain timeline failures.
+- Tasks:
+  1. Write a PostgreSQL Recursive Common Table Expression (CTE) query to trace multi-agent graph failures backwards.
+  2. Expose this inside the SDK via 'db.query_causality(plan_id)' ensuring a sub-5ms return time.
+- Branch: feature/03-causal-queries
+
+### MILESTONE 4: DEBUG GRAPH UI & BENCHMARKS (WEEK 4)
+- Goal: Build the visual timeline flowchart tracer and assert latency metrics.
+- Tasks:
+  1. Create a 1-page Streamlit/FastAPI debugging dashboard ('dashboard/app.py') that visually highlights failed plan nodes in red.
+  2. Write 'tests/benchmark_perf.py' simulating 1,000 parallel agent calls to verify under 5ms write/read speeds.
+- Branch: feature/04-dashboard-benchmarks
