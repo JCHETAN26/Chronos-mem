@@ -19,6 +19,7 @@ from psycopg import AsyncCursor
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
 
+from .analytics import AnalyticsMixin
 from .causality import CausalityMixin
 from .interventions import InterventionMixin
 from .tracking import TrackingMixin
@@ -27,7 +28,7 @@ from .tracking import TrackingMixin
 _DSN_ENV_VAR = "CHRONOS_DSN"
 
 
-class ChronosClient(TrackingMixin, CausalityMixin, InterventionMixin):
+class ChronosClient(TrackingMixin, CausalityMixin, InterventionMixin, AnalyticsMixin):
     """A pooled, async entrypoint to a chronos-mem database."""
 
     def __init__(
