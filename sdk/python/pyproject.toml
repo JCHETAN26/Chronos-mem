@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "chronos-mem"
+version = "0.1.0"
+description = "PostgreSQL-backed structured memory and causal debugging engine for autonomous AI agents."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "chronos-mem" }]
+keywords = ["ai-agents", "memory", "postgres", "pgvector", "observability"]
+
+dependencies = [
+    # Async Postgres driver + pooling. psycopg3 with the C speedups and the
+    # separate connection-pool package.
+    "psycopg[binary,pool]>=3.2",
+    # Pydantic v2 for the typed return models.
+    "pydantic>=2.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.4",
+    "mypy>=1.10",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["chronos_mem"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
