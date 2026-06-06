@@ -16,7 +16,7 @@ from .models import ToolBrittleness
 # Order most-brittle first; the view itself does not guarantee row order.
 _TOOL_BRITTLENESS_SQL = """
 SELECT tool_name, total_calls, successes, failures, partials, failure_rate, last_seen
-FROM tool_brittleness
+FROM view_tool_brittleness_analysis
 ORDER BY failure_rate DESC, total_calls DESC
 LIMIT %(limit)s;
 """

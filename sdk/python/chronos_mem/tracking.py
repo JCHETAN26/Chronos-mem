@@ -14,6 +14,7 @@ from typing import Any, Protocol
 from uuid import UUID
 
 from psycopg.types.json import Jsonb
+from pydantic import validate_call
 
 from .models import (
     Action,
@@ -32,11 +33,16 @@ class _RowFetcher(Protocol):
     async def _fetchrow(self, query: str, params: tuple[Any, ...]) -> dict[str, Any]: ...
 
 
+# Validate caller-supplied argument types against the annotations *before* any
+# DB round trip — bad types (e.g. an int where a str is required) raise a
+# pydantic.ValidationError client-side instead of wasting a connection. `self`
+# is intentionally left unannotated so validate_call skips it.
 class TrackingMixin:
     """create_plan / log_action / log_outcome / log_intervention — agent write verbs."""
 
+    @validate_call
     async def create_plan(
-        self: _RowFetcher,
+        self,
         agent_id: str,
         goal: str,
         *,
@@ -56,8 +62,9 @@ class TrackingMixin:
         )
         return Plan.model_validate(row)
 
+    @validate_call
     async def log_action(
-        self: _RowFetcher,
+        self,
         plan_id: UUID | str,
         tool_name: str,
         *,
@@ -74,8 +81,9 @@ class TrackingMixin:
         )
         return Action.model_validate(row)
 
+    @validate_call
     async def log_outcome(
-        self: _RowFetcher,
+        self,
         action_id: UUID | str,
         status: OutcomeStatus | str,
         *,
@@ -94,8 +102,9 @@ class TrackingMixin:
         )
         return Outcome.model_validate(row)
 
+    @validate_call
     async def log_intervention(
-        self: _RowFetcher,
+        self,
         outcome_id: UUID | str,
         error_type: str,
         strategy: InterventionStrategy | str,
