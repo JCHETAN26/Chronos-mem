@@ -108,3 +108,88 @@ class Intervention(_Base):
     succeeded: bool
     details: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime
+
+
+class BestIntervention(_Base):
+    """The historically most-successful strategy for an error type.
+
+    Returned by get_best_intervention(): the strategy with the most past
+    successes for a given error_type, so an agent can self-correct.
+    """
+
+    error_type: str
+    strategy: InterventionStrategy
+    success_count: int
+    last_used: datetime
+
+
+# --- Causal trace composites (Milestone 3) ---------------------------------
+# Assembled by query_causality() from the recursive-CTE rows. These are read
+# views over the pillars, not tables of their own.
+
+# Outcome states that count as a failure when hunting for root causes.
+FAILURE_STATES: frozenset[OutcomeStatus] = frozenset(
+    {OutcomeStatus.FAILURE, OutcomeStatus.ERROR}
+)
+
+
+class ActionTrace(_Base):
+    """An action paired with its outcome (if one has been logged yet)."""
+
+    action: Action
+    outcome: Outcome | None = None
+
+    @property
+    def failed(self) -> bool:
+        """True when the action has a terminal failure/error verdict."""
+        return self.outcome is not None and self.outcome.status in FAILURE_STATES
+
+
+class CausalNode(_Base):
+    """A plan node within a trace, with its actions and their outcomes.
+
+    ``depth`` is the distance below the traced plan (0 == the traced node).
+    """
+
+    plan: Plan
+    depth: int
+    actions: list[ActionTrace] = Field(default_factory=list)
+
+    @property
+    def failed(self) -> bool:
+        """True if the plan node itself failed or any of its actions failed."""
+        return self.plan.status == PlanStatus.FAILED or any(a.failed for a in self.actions)
+
+
+class CausalTrace(_Base):
+    """The full causal context of a plan: its ancestry and its subtree.
+
+    - ``ancestors``: the goal-decomposition path from the root down to (but
+      excluding) the traced node — the "backwards" explanation of how the
+      agent arrived here.
+    - ``subtree``: the traced node (depth 0) plus every descendant, each with
+      its actions and outcomes — everything that happened under this goal.
+    """
+
+    plan_id: UUID
+    ancestors: list[Plan] = Field(default_factory=list)
+    subtree: list[CausalNode] = Field(default_factory=list)
+
+    @property
+    def root(self) -> CausalNode:
+        """The traced node itself (depth 0)."""
+        return self.subtree[0]
+
+    @property
+    def failed_actions(self) -> list[ActionTrace]:
+        """Every failed/errored action anywhere in the subtree."""
+        return [a for node in self.subtree for a in node.actions if a.failed]
+
+    @property
+    def failed_nodes(self) -> list[CausalNode]:
+        """Every subtree plan node that failed."""
+        return [node for node in self.subtree if node.failed]
+
+    @property
+    def has_failures(self) -> bool:
+        return bool(self.failed_nodes)
