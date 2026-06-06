@@ -24,6 +24,7 @@ from .models import (
     OutcomeStatus,
     Plan,
     PlanStatus,
+    ToolBrittleness,
 )
 
 __all__ = [
@@ -34,6 +35,7 @@ __all__ = [
     "Outcome",
     "Intervention",
     "BestIntervention",
+    "ToolBrittleness",
     "PlanStatus",
     "OutcomeStatus",
     "InterventionStrategy",

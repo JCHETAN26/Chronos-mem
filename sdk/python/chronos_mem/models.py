@@ -123,6 +123,18 @@ class BestIntervention(_Base):
     last_used: datetime
 
 
+class ToolBrittleness(_Base):
+    """One row of the tool_brittleness analytical view — a tool's failure profile."""
+
+    tool_name: str
+    total_calls: int
+    successes: int
+    failures: int
+    partials: int
+    failure_rate: float
+    last_seen: datetime
+
+
 # --- Causal trace composites (Milestone 3) ---------------------------------
 # Assembled by query_causality() from the recursive-CTE rows. These are read
 # views over the pillars, not tables of their own.
