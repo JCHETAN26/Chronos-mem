@@ -11,8 +11,11 @@ the pool multiplexes concurrent agent calls over a bounded set of connections.
 from __future__ import annotations
 
 import os
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Any
 
+from psycopg import AsyncCursor
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
 
@@ -70,32 +73,38 @@ class ChronosClient(TrackingMixin, CausalityMixin, InterventionMixin):
     async def __aexit__(self, *_exc: object) -> None:
         await self.close()
 
-    # -- low-level query helper ---------------------------------------------
+    # -- low-level query helpers --------------------------------------------
 
-    async def _fetchrow(self, query: str, params: tuple[Any, ...]) -> dict[str, Any]:
-        """Execute a single-row-returning statement and return that row as a dict.
+    @asynccontextmanager
+    async def _cursor(self) -> AsyncIterator[AsyncCursor[dict[str, Any]]]:
+        """Check out one pooled connection and yield a cursor on it.
 
-        Used by the tracking verbs for ``INSERT ... RETURNING *``. The pool's
-        context manager returns the connection and commits on clean exit.
+        A single checkout per logical operation keeps pool pressure low under
+        high concurrency; multi-statement reads (e.g. the two causal-trace CTEs)
+        share one connection — and one transactional snapshot — instead of
+        contending for the pool twice. The connection commits on clean exit.
         """
         async with self._pool.connection() as conn:
             async with conn.cursor() as cur:
-                await cur.execute(query, params)
-                row = await cur.fetchone()
+                yield cur
+
+    async def _fetchrow(self, query: str, params: Any) -> dict[str, Any]:
+        """Execute a single-row-returning statement and return that row as a dict.
+
+        Used by the tracking verbs for ``INSERT ... RETURNING *``.
+        """
+        async with self._cursor() as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
         if row is None:
             raise RuntimeError("Expected a returned row but the statement produced none.")
         return row
 
-    async def _fetch(self, query: str, params: tuple[Any, ...]) -> list[dict[str, Any]]:
-        """Execute a read query and return all rows as dicts.
-
-        Used by the causal-trace recursive CTEs, which return one row per
-        action across the walked plan subtree.
-        """
-        async with self._pool.connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(query, params)
-                return await cur.fetchall()
+    async def _fetch(self, query: str, params: Any) -> list[dict[str, Any]]:
+        """Execute a read query and return all rows as dicts."""
+        async with self._cursor() as cur:
+            await cur.execute(query, params)
+            return await cur.fetchall()
 
     async def ping(self) -> bool:
         """Cheap liveness check — returns True if the pool can serve a query."""
