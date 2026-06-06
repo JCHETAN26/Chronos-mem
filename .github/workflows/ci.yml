@@ -66,8 +66,11 @@ jobs:
             done
             echo "FAILED to apply $1"; cat /tmp/psql.out; return 1
           }
-          apply db/migrations/001_init_chronos_schema.sql
-          apply db/migrations/002_tool_brittleness_view.sql
+          # Apply every migration in lexical order, so new ones are picked up
+          # automatically without editing this workflow.
+          for m in $(ls db/migrations/*.sql | sort); do
+            apply "$m"
+          done
 
       - name: Install SDK
         run: pip install -e sdk/python
