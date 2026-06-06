@@ -33,6 +33,42 @@ The payoff is a closed loop: **explain the failure** (walk the causal graph
 backward from a broken outcome) *and* **recommend the fix** (rank the
 interventions that resolved this class of error before).
 
+## Architecture
+
+```
+        ┌──────────────────────────────────────────────────────────┐
+        │                     Autonomous agent                       │
+        └──────────────────────────────┬─────────────────────────────┘
+                                        │  create_plan / log_action
+                                        │  log_outcome / log_intervention
+                                        ▼
+        ┌──────────────────────────────────────────────────────────┐
+        │              chronos-mem SDK  (async, psycopg3)            │
+        │                                                            │
+        │  WRITE                READ / DEBUG                         │
+        │  ─────                ───────────                          │
+        │  create_plan          query_causality(plan_id)  ── trace   │
+        │  log_action           get_best_intervention()   ── fix     │
+        │  log_outcome          tool_brittleness()         ── stats  │
+        │  log_intervention                                          │
+        └──────────────────────────────┬─────────────────────────────┘
+                                        │  bounded async connection pool
+                                        ▼
+        ┌──────────────────────────────────────────────────────────┐
+        │           PostgreSQL 16 + pgvector  (sub-5ms)              │
+        │                                                            │
+        │   memories ── plans ──< actions ──1:1── outcomes           │
+        │   (vector)   (DAG, self-ref)    (JSONB)        │           │
+        │                                                ▼           │
+        │                                          interventions     │
+        │                                   view: tool_brittleness    │
+        └──────────────────────────────┬─────────────────────────────┘
+                                        │
+                                        ▼
+                          Streamlit debug dashboard
+                       (goal DAG · failed nodes in red · suggested fix)
+```
+
 ## Quickstart
 
 **1. Bring up Postgres + pgvector:**
@@ -128,6 +164,12 @@ Built in four milestones (see `build-plan.txt`):
 3. **Causal tracing & intervention engine** — `query_causality` + `get_best_intervention`
 4. **Debug dashboard & benchmarks**
 
+## Install from PyPI
+
+```bash
+pip install chronos-mem
+```
+
 ## License
 
-MIT.
+[Apache License 2.0](LICENSE).

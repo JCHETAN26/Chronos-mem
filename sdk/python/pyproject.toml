@@ -8,9 +8,22 @@ version = "0.1.0"
 description = "PostgreSQL-backed structured memory and causal debugging engine for autonomous AI agents."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 authors = [{ name = "chronos-mem" }]
-keywords = ["ai-agents", "memory", "postgres", "pgvector", "observability"]
+keywords = ["ai-agents", "memory", "postgres", "pgvector", "observability", "llm", "agents"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Database",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Framework :: AsyncIO",
+]
 
 dependencies = [
     # Async Postgres driver + pooling. psycopg3 with the C speedups and the
@@ -19,6 +32,11 @@ dependencies = [
     # Pydantic v2 for the typed return models.
     "pydantic>=2.6",
 ]
+
+[project.urls]
+Homepage = "https://github.com/JCHETAN26/Chronos-mem"
+Repository = "https://github.com/JCHETAN26/Chronos-mem"
+Issues = "https://github.com/JCHETAN26/Chronos-mem/issues"
 
 [project.optional-dependencies]
 dev = [
