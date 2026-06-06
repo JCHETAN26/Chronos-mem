@@ -88,5 +88,15 @@ jobs:
       - name: Concurrency stress test (0 deadlocks)
         run: python tests/stress_concurrency.py
 
+      - name: Edge-case tests
+        # Guarded: edge_cases.py (and the input guardrails it exercises) arrive
+        # via a separate PR. Skips cleanly until present, then runs on main.
+        run: |
+          if [ -f tests/edge_cases.py ]; then
+            python tests/edge_cases.py
+          else
+            echo "tests/edge_cases.py not on this branch yet — skipping"
+          fi
+
       - name: Performance gate
         run: python tests/benchmark_perf.py
