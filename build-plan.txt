@@ -5,11 +5,11 @@
 - All development must occur on descriptive feature branches (e.g., feature/01-init-db).
 - Every branch must be merged into 'main' via a GitHub Pull Request (PR) after a self-review of Claude's generated code.
 
-### MILESTONE 1: POSTGRES ENGINE & ENVIRONMENT (WEEK 1)
+### MILESTONE 1: HYBRID POSTGRES ENGINE & ENVIRONMENT (WEEK 1)
 - Goal: Provision local Postgres with pgvector and compile core schemas for chronos-mem.
 - Tasks:
   1. Write 'db/docker-compose.yml' targeting PostgreSQL 16 + pgvector.
-  2. Write 'db/migrations/001_init_chronos_schema.sql' defining the 4 pillars (memories, plans, actions, outcomes) with strict foreign keys and performance indexes.
+  2. Write 'db/migrations/001_init_chronos_schema.sql' defining the 5 pillars (memories, plans, actions, outcomes, interventions) utilizing JSONB for flexible agent workspace data, strict foreign keys for causality, and optimized performance indexes.
 - Branch: feature/01-postgres-core
 
 ### MILESTONE 2: ASYNC PYTHON SDK CORE (WEEK 2)
