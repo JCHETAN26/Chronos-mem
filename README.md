@@ -157,12 +157,11 @@ process). See `tests/benchmark_perf.py`.
 
 ## Status
 
-Built in four milestones (see `build-plan.txt`):
-
-1. **Postgres engine** — pgvector + the five-pillar schema
-2. **Async Python SDK** — pooled client + tracking verbs
-3. **Causal tracing & intervention engine** — `query_causality` + `get_best_intervention`
-4. **Debug dashboard & benchmarks**
+- **Postgres engine** — pgvector + the five-pillar schema, with a `tool_brittleness` analytical view
+- **Async Python SDK** — pooled client + tracking verbs (`create_plan` / `log_action` / `log_outcome` / `log_intervention`)
+- **Causal tracing & intervention engine** — `query_causality` + `get_best_intervention`
+- **Debug dashboard & benchmarks** — Streamlit tracer + a 1,000-call performance benchmark
+- **Cloud architecture** — multi-tenant hosted design in [`docs/chronos-cloud-architecture.md`](docs/chronos-cloud-architecture.md)
 
 ## Install from PyPI
 
