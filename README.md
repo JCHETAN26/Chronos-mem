@@ -65,8 +65,8 @@ interventions that resolved this class of error before).
         └──────────────────────────────┬─────────────────────────────┘
                                         │
                                         ▼
-                          Streamlit debug dashboard
-                       (goal DAG · failed nodes in red · suggested fix)
+                    Web dashboard (FastAPI + React)
+                  interactive DAG · red failures · suggested fix
 ```
 
 ## Quickstart
@@ -121,12 +121,17 @@ asyncio.run(main())
 
 ## Debug dashboard
 
-A one-page visual tracer renders the goal DAG, highlights failed nodes in **red**,
-and suggests the best past intervention for each failure:
+An interactive, dark-themed web dashboard renders the goal DAG (pan/zoom),
+highlights failed nodes in **red**, opens a detail drawer per node (actions,
+payloads, outcome, suggested fix), and charts tool brittleness. It's a FastAPI
+JSON API over the SDK + a React/Vite frontend — see [`web/README.md`](web/README.md).
 
 ```bash
-pip install -r dashboard/requirements.txt
-streamlit run dashboard/app.py
+# 1. backend (from web/api/)
+pip install -r web/api/requirements.txt
+CHRONOS_DSN=... uvicorn main:app --port 8000
+# 2. frontend (from web/app/)
+npm install && npm run dev      # opens http://localhost:5173
 ```
 
 ## Repository layout
@@ -134,15 +139,17 @@ streamlit run dashboard/app.py
 ```
 db/
   docker-compose.yml                  Postgres 16 + pgvector, SSD-tuned
-  migrations/001_init_chronos_schema.sql   the five-pillar schema
+  migrations/                         the five-pillar schema + tool-brittleness view
   queries/                            canonical recursive-CTE + intervention SQL
 sdk/python/chronos_mem/
   client.py                           async psycopg3 connection pool
   tracking.py                         create_plan / log_action / log_outcome / log_intervention
   causality.py                        query_causality (recursive CTE, both directions)
   interventions.py                    get_best_intervention (self-correction)
+  analytics.py                        tool_brittleness
   models.py                           Pydantic v2 models mirroring the schema
-dashboard/                            Streamlit causal tracer
+web/api/                              FastAPI JSON API over the SDK
+web/app/                              React + Vite dark dashboard (React Flow graph)
 tests/benchmark_perf.py               1,000-parallel-call performance benchmark
 ```
 

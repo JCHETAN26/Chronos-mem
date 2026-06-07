@@ -1,0 +1,6 @@
+# chronos-mem web API dependencies.
+#   pip install -r web/api/requirements.txt
+# For local dev against the in-repo SDK, also: pip install -e ../../sdk/python
+fastapi>=0.110
+uvicorn[standard]>=0.29
+chronos-mem>=0.1.0
