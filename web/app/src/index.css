@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+/* ---- chronos-mem dark theme tokens ---- */
+:root {
+  color-scheme: dark;
+  --bg: #0a0d12;
+  --surface: #11151d;
+  --surface-2: #161b25;
+  --border: #232a36;
+  --border-soft: #1b212c;
+  --text: #e6e9ef;
+  --text-dim: #8b95a7;
+  --text-faint: #5c6677;
+  --accent: #6366f1;
+  --accent-soft: #6366f133;
+  --ok: #22c55e;
+  --warn: #f59e0b;
+  --fail: #ef4444;
+  --fail-soft: #ef444422;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.mono {
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+}
+
+/* thin custom scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 6px;
+}
+
+/* React Flow surface tuning for dark mode */
+.react-flow__attribution {
+  display: none;
+}
+.react-flow__controls {
+  box-shadow: none;
+}
+.react-flow__controls-button {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text-dim);
+}
+.react-flow__controls-button:hover {
+  background: var(--border);
+}
+
+@keyframes pulseFail {
+  0%, 100% { box-shadow: 0 0 0 0 var(--fail-soft); }
+  50% { box-shadow: 0 0 0 5px transparent; }
+}
