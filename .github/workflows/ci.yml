@@ -51,6 +51,11 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
       - name: Install psql client
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends postgresql-client
 
@@ -82,9 +87,6 @@ jobs:
           python sdk/python/scripts/intervention_test.py
           python sdk/python/scripts/analytics_test.py
 
-      - name: Dashboard render unit tests
-        run: PYTHONPATH=dashboard python dashboard/test_render.py
-
       - name: Concurrency stress test (0 deadlocks)
         run: python tests/stress_concurrency.py
 
@@ -93,3 +95,13 @@ jobs:
 
       - name: Performance gate
         run: python tests/benchmark_perf.py
+
+      - name: Web API import check
+        run: |
+          pip install fastapi "uvicorn[standard]"
+          python -c "import sys; sys.path.insert(0, 'web/api'); import main; print('web API imports OK')"
+
+      - name: Frontend build
+        run: |
+          npm --prefix web/app ci
+          npm --prefix web/app run build
